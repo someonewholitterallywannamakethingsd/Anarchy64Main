@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anarchy64</title>
+    <style>
+        :root {
+            --bg-color: #0e051a; /* A purplish color for awesomeness */
+            --card-bg: #302e36;
+            --accent-color: #7c3aed; /* Eye-friendly violet */
+            --accent-hover: #6d28d9;
+            --text-color: #ddc8e6;
+            --text-muted: #9b85ab;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        /* Logo Styling */
+        .site-logo {
+            max-width: 440px;
+            height: auto;
+            display: block;
+            margin: 0 auto 5px auto;
+        }
+
+        header p {
+            color: var(--text-muted);
+            margin: 5px 0 0 0;
+            font-size: 0.95rem;
+        }
+
+        .main-container {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+            width: 700px;
+            max-width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* File Loader Bar */
+        .loader-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            width: 100%;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .file-label {
+            background-color: var(--accent-color);
+            color: white;
+            padding: 10px 18px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: background-color 0.2s;
+        }
+
+        .file-label:hover {
+            background-color: var(--accent-hover);
+        }
+
+        #rom-upload {
+            display: none;
+        }
+
+        #file-name-display {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-style: italic;
+        }
+
+        /* Emulator Screen Viewport */
+        #game {
+            width: 640px;
+            height: 480px;
+            max-width: 100%;
+            background-color: #000;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .help-footer {
+            margin-top: 15px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-align: center;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <img src="logo.png" alt="Anarchy64 Logo" class="site-logo">
+        <p>A web N64 emulator but with some design! Add your rom here!</p>
+    </header>
+
+    <div class="main-container">
+        <!-- Interactive ROM Loader Bar -->
+        <div class="loader-bar">
+            <label for="rom-upload" class="file-label">Choose ROM File</label>
+            <input type="file" id="rom-upload" accept=".z64,.n64,.v64">
+            <button id="demo-btn" class="file-label" style="background-color: #2563eb; border: none;">Play Demo</button>
+            <span id="file-name-display">No ROM selected! (.z64, .n64)</span>
+        </div>
+        <div id="game"></div>
+
+        <div class="help-footer">
+            <strong>Controls/Settings:</strong> Click the ⚙ icon inside the menu bar after loading your game to customize keyboard maps or connect a USB controller. Useful for better controls!
+        </div>
+    </div>
+
+<!-- Configuration Script for Local Testing -->
+    <script>
+        window.EJS_player = '#game';
+        window.EJS_core = 'n64';
+        window.EJS_csp = true;
+        window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
+        window.EJS_gameUrl = '';
+
+        // Local testing flags to keep console clean:
+        window.EJS_disableDatabases = true;
+        window.EJS_threads = true;         // Turn off locally (turn back to true when on Netlify)
+        window.EJS_defaultOptions = {
+            'n64-perf': 'high'
+        };
+
+        const romInput = document.getElementById('rom-upload');
+        const demoBtn = document.getElementById('demo-btn');
+        const fileNameDisplay = document.getElementById('file-name-display');
+
+        // Handle Custom User ROM Upload
+        romInput.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                fileNameDisplay.textContent = file.name;
+                const fileURL = URL.createObjectURL(file);
+                
+                if (typeof EJS_emulator !== 'undefined' && EJS_emulator.loadGame) {
+                    EJS_emulator.loadGame(fileURL);
+                } else {
+                    window.EJS_gameUrl = fileURL;
+                    if (!document.getElementById('ejs-loader')) {
+                        const script = document.createElement('script');
+                        script.id = 'ejs-loader';
+                        script.src = 'https://cdn.emulatorjs.org/stable/data/loader.js';
+                        document.body.appendChild(script);
+                    }
+                }
+            }
+        });
+
+        // Handle Built-in Demo ROM Button
+        demoBtn.addEventListener('click', function() {
+            fileNameDisplay.textContent = "Demo: Waluigi's Taco Stand";
+            const demoURL = 'demo.z64';
+            
+            if (typeof EJS_emulator !== 'undefined' && EJS_emulator.loadGame) {
+                EJS_emulator.loadGame(demoURL);
+            } else {
+                window.EJS_gameUrl = demoURL;
+                if (!document.getElementById('ejs-loader')) {
+                    const script = document.createElement('script');
+                    script.id = 'ejs-loader';
+                    script.src = 'https://cdn.emulatorjs.org/stable/data/loader.js';
+                    document.body.appendChild(script);
+                }
+            }
+        });
+    </script>
+
+</body>
+</html>
